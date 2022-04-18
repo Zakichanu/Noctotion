@@ -17,7 +17,7 @@
 
 - Have a Notion [integration](https://www.notion.so/my-integrations) and retrieve the API KEY of it.
 - Create a github API key, you can follow this [tutorial](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token), it's pretty easy
-- Retrieve you ID of your issues database and put all 3 keys in a .env file like this : 
+- Retrieve your ID of your issues database and put all 3 keys in a .env file like this : 
   ```sh
   GITHUB_KEY=<GITHUB KEY>
   NOTION_KEY=<NOTION KEY>
@@ -32,7 +32,7 @@ Now the requirement are done, you just have to do these things :
      - ```npm install -g ts-node```
      - ```npx tsc --init```
 - Run ```npm install```
-- And then you're to go : ```npm start```
+- And then you're good to go : ```npm start```
 
 
 ## Set-up on server
