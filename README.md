@@ -1,7 +1,7 @@
-# Noctotion
+# 🐙 Noctotion
 
 ## Presentation
-🐙 Github tool for listing some of your activity inside a database of Notion, made it in Typescript and I was inspired by this glitch [code](https://glitch.com/edit/#!/notion-github-sync?path=README.md%3A1%3A0), thanks a lot Notion team ! 
+Github tool for listing some of your activity inside a database of Notion, made it in Typescript and I was inspired by this glitch [code](https://glitch.com/edit/#!/notion-github-sync?path=README.md%3A1%3A0), thanks a lot Notion team ! 
 
 
 ## Table of Contents
