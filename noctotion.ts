@@ -9,6 +9,7 @@ const octokit = new Octokit({ auth: process.env.GITHUB_KEY });
 const notion = new Client({ auth: process.env.NOTION_KEY });
 
 const issuesDB = process.env.NOTION_DATABASE_ID_ISSUES;
+const pullRequestDB = process.env.NOTION_DATABASE_ID_PR;
 const OPERATION_BATCH_SIZE = 10;
 
 const gitHubIssuesIdToNotionPageId: {}[] = [] // Maps GitHub issue numbers to Notion page IDs
@@ -19,11 +20,34 @@ setInitialGitHubToNotionIdMap().then(syncNotionDatabaseWithGitHub)
 
 
 async function setInitialGitHubToNotionIdMap() {
-  const stockedIssues = await getIssuesFromNotionDatabase()
+  const stockedIssues = await getIssuesFromNotionDatabase();
     for (const { pageId, issueNumber } of stockedIssues) {
       gitHubIssuesIdToNotionPageId[issueNumber] = pageId;
     }
 
+}
+
+// Retrieve issues from GitHub API and sync with the one present on Notion
+async function syncNotionDatabaseWithGitHub() {
+
+  // Get all issues currently in the provided GitHub repository.
+  console.log("\nFetching issues from Notion DB...")
+  const issues = await getGitHubIssuesForRepository()
+  console.log(`Fetched ${issues.length} issues from GitHub repository.`)
+
+  // Group issues into those that need to be created or updated in the Notion database.
+  const { pagesToCreate, pagesToUpdate } = getNotionOperations(issues)
+
+  // Create pages for new issues.
+  console.log(`\n${pagesToCreate.length} new issues to add to Notion.`)
+  await createPages(pagesToCreate)
+
+  // Updates pages for existing issues.
+  console.log(`\n${pagesToUpdate.length} issues to update in Notion.`)
+  await updatePages(pagesToUpdate)
+
+  // Success!
+  console.log("\n✅ Notion database is synced with GitHub.")
 }
 
 // Retrieve issues already in notion database.
@@ -52,28 +76,7 @@ async function getIssuesFromNotionDatabase() {
   })
 }
 
-// Retrieve issues from GitHub API and sync with the one present on Notion
-async function syncNotionDatabaseWithGitHub() {
 
-  // Get all issues currently in the provided GitHub repository.
-  console.log("\nFetching issues from Notion DB...")
-  const issues = await getGitHubIssuesForRepository()
-  console.log(`Fetched ${issues.length} issues from GitHub repository.`)
-
-  // Group issues into those that need to be created or updated in the Notion database.
-  const { pagesToCreate, pagesToUpdate } = getNotionOperations(issues)
-
-  // Create pages for new issues.
-  console.log(`\n${pagesToCreate.length} new issues to add to Notion.`)
-  await createPages(pagesToCreate)
-
-  // Updates pages for existing issues.
-  console.log(`\n${pagesToUpdate.length} issues to update in Notion.`)
-  await updatePages(pagesToUpdate)
-
-  // Success!
-  console.log("\n✅ Notion database is synced with GitHub.")
-}
 
 
 
