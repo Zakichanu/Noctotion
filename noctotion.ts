@@ -81,7 +81,7 @@ async function getIssuesFromNotionDatabase() {
 
 
 async function getGitHubIssuesForRepository() {
-  const issues: { number: number, title: string, state: string, comment_count: number, url: string, repository: string, author: string }[] = []
+  const issues: { number: number, title: string, state: string, comment_count: number, url: string, repository: string, author: string, dates : string }[] = []
   const iterator = octokit.paginate.iterator(octokit.rest.issues.list, {
     state: "all",
     per_page: 100,
@@ -89,12 +89,16 @@ async function getGitHubIssuesForRepository() {
   for await (const { data } of iterator) {
     for (const issue of data) {
       if (!issue.pull_request) {
+        // Adapt the date function to the state of issue
+        const datesInserted: string = issue.state === "open" ? issue.updated_at : issue.closed_at!
+
         issues.push({
           number: issue.number,
           title: issue.title,
           state: issue.state,
           comment_count: issue.comments,
           repository: issue.repository?.name as string,
+          dates : datesInserted,
           author: issue.user?.login as string,
           url: issue.html_url,
         })
@@ -138,7 +142,7 @@ async function createPages(pagesToCreate) {
 }
 
 function getPropertiesFromIssue(issue) {
-  const { title, repository, author, number, state, comment_count, url } = issue
+  const { title, repository, author, number, state, comment_count, url, dates } = issue
   return {
     Name: {
       title: [{ type: "text", text: { content: title } }],
@@ -161,6 +165,9 @@ function getPropertiesFromIssue(issue) {
     },
     "Issue URL": {
       url,
+    },
+    Date: {
+      "date": { "start": dates },
     },
   }  
 }
