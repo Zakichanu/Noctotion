@@ -22,9 +22,10 @@ Github tool for listing some of your activity inside a database of Notion, made 
   GITHUB_KEY=<GITHUB KEY>
   NOTION_KEY=<NOTION KEY>
   NOTION_DATABASE_ID_ISSUES=<ID HERE>
+  NOTION_DATABASE_ID_PR=<ID HERE>
   ```
 - Don't forget to have a version of Node later than 16.
-- And also, don't forget to share your database to your Notion integration 😆
+- And also, don't forget to share your database to your Notion integration 😆 (got to do this mistake so many times)
 ## Run the program
 
 Now the requirement are done, you just have to do these things :
