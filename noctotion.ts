@@ -7,7 +7,7 @@ import { Octokit } from 'octokit'; // Import octokit
 // Initialize variables
 dotenv.config();
 const octokit = new Octokit({ auth: process.env.GITHUB_KEY });
-const notion = new Client({ auth: process.env.NOTION_KEY }); 
+const notion = new Client({ auth: process.env.NOTION_KEY });
 
 const issuesDB = process.env.NOTION_DATABASE_ID_ISSUES;
 const pullRequestDB = process.env.NOTION_DATABASE_ID_PR;
