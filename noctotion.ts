@@ -1,7 +1,8 @@
+import _ from 'lodash'; // Import lodash
 import { Client } from '@notionhq/client'; // Import Notion Client
 import dotenv from 'dotenv'; // Import dotenv
 import { Octokit } from 'octokit'; // Import octokit
-import _ from 'lodash'; // Import lodash
+
 
 // Initialize variables
 dotenv.config();
@@ -52,7 +53,7 @@ async function getIssuesFromNotionDatabase() {
   }
   console.log(`${pages.length} issues successfully fetched.`)
   console.log(pages.length)
-  return pages.map(page => {
+  return pages.map((page: any) => {
     return {
       pageId: page.id,
       issueNumber: page.properties["ID"].number,
@@ -77,7 +78,7 @@ async function getPullRequestsFromNotionDatabase() {
     cursor = next_cursor;
   }
   console.log(`${pages.length} pull requests successfully fetched.`)
-  return pages.map(page => {
+  return pages.map((page: any) => {
     return {
       pageId: page.id,
       prNumber: page.properties["ID"].number,
@@ -201,7 +202,7 @@ async function getGitHubPRForOwningRepo() {
   return pullRequest;
 }
 
-function getNotionOperations(activity, activityString: string) {
+function getNotionOperations(activity: any, activityString: string) {
   const pagesToCreateIssues: {}[] = []
   const pagesToUpdateIssues: {}[] = []
   const pagesToCreatePRs: {}[] = []
@@ -234,11 +235,11 @@ function getNotionOperations(activity, activityString: string) {
   
 }
 
-async function createPages(pagesToCreate, dbToTarget: string) {
+async function createPages(pagesToCreate: any, dbToTarget: string) {
   const pagesToCreateChunks = _.chunk(pagesToCreate, OPERATION_BATCH_SIZE)
   for (const pagesToCreateBatch of pagesToCreateChunks) {
     await Promise.all(
-      pagesToCreateBatch.map(activity =>
+      pagesToCreateBatch.map((activity: any) =>
         notion.pages.create({
           parent: { database_id: dbToTarget },
           properties: getPropertiesFromIssueAndPR(activity) as any,
@@ -249,7 +250,7 @@ async function createPages(pagesToCreate, dbToTarget: string) {
   }
 }
 
-function getPropertiesFromIssueAndPR(activity) {
+function getPropertiesFromIssueAndPR(activity: any) {
   const { title, repository, author, number, state, url, dates } = activity
   return {
     Name: {
@@ -277,11 +278,11 @@ function getPropertiesFromIssueAndPR(activity) {
   }  
 }
 
-async function updatePages(pagesToUpdate) {
+async function updatePages(pagesToUpdate: any) {
   const pagesToUpdateChunks: Array<any> = _.chunk(pagesToUpdate, OPERATION_BATCH_SIZE)
   for (const pagesToUpdateBatch of pagesToUpdateChunks) {
     await Promise.all(
-      pagesToUpdateBatch.map(({ pageId, ...activity }) =>
+      pagesToUpdateBatch.map(({ pageId, ...activity } : {pageId: any}) =>
         notion.pages.update({
           page_id: pageId,
           properties: getPropertiesFromIssueAndPR(activity) as any,
