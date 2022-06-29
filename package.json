@@ -3,12 +3,10 @@
   "version": "1.0.0",
   "description": "Get your github issues, pr etc. in your notion page",
   "main": "noctotion.ts",
-  "engines": {
-    "node": "16.x"
-  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon noctotion.ts"
+    "start": "pm2 start noctotion.ts --name 'Noctotion' --watch",
+    "dev": "nodemon noctotion.ts"
   },
   "author": "Zakaria Tobbal",
   "license": "MIT",
@@ -16,9 +14,13 @@
     "@notionhq/client": "^0.2.3",
     "dotenv": "^10.0.0",
     "lodash": "^4.17.21",
-    "octokit": "^1.7.1"
+    "node-cron": "^3.0.0",
+    "octokit": "^1.7.1",
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
-    "@types/lodash": "^4.14.182"
+    "@types/lodash": "^4.14.182",
+    "@types/node-cron": "^3.0.1",
+    "@types/uuid": "^8.3.4"
   }
 }

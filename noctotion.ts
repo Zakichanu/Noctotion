@@ -2,6 +2,7 @@ import _ from 'lodash'; // Import lodash
 import { Client } from '@notionhq/client'; // Import Notion Client
 import dotenv from 'dotenv'; // Import dotenv
 import { Octokit } from 'octokit'; // Import octokit
+import cron from 'node-cron';
 
 
 // Initialize variables
@@ -17,7 +18,16 @@ const gitHubIssuesIdToNotionPageId: {}[] = [] // Maps GitHub issue numbers to No
 const gitHubPRsIdToNotionPageId: {}[] = [] // Maps GitHub PRs numbers to Notion page IDs
 
 // Get issues already stored on Notion DB and then sync with github ones
-setInitialGitHubToNotionIdMap().then(syncNotionDatabaseWithGitHub)
+
+try{
+  cron.schedule('0 */6 * * *', async () => {
+    setInitialGitHubToNotionIdMap().then(syncNotionDatabaseWithGitHub)
+  })
+}catch(err) {
+  console.log(err)
+}
+
+
 
 
 
