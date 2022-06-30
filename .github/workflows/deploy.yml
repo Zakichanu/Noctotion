@@ -28,7 +28,7 @@ jobs:
     - run: npm test
 
     - name: 🚧 Installing PM2
-        run: npm i pm2
+      - run: npm i pm2
 
     - name: 🧳 Copy repository contents via scp
       uses: appleboy/scp-action@master
