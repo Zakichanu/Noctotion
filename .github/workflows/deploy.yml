@@ -46,6 +46,9 @@ jobs:
         USERNAME: ${{ secrets.USERNAME }}
         PASSWORD: ${{ secrets.PASSWORD }}
         PORT: ${{ secrets.PORT }}
-        script: ls
+        script:|
+        pwd
+        ls
+        ./deploy.sh
     
     - run: pm2 restart Noctotion
