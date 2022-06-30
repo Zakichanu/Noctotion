@@ -22,7 +22,7 @@ let codeIsRunning : boolean = true;
 
 // Get issues already stored on Notion DB and then sync with github ones
 try{
-
+  console.log("App Running")
   cron.schedule('0 */6 * * *', async () => {
     setInitialGitHubToNotionIdMap().then(syncNotionDatabaseWithGitHub)
   })
