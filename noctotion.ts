@@ -17,13 +17,17 @@ const OPERATION_BATCH_SIZE = 50;
 const gitHubIssuesIdToNotionPageId: {}[] = [] // Maps GitHub issue numbers to Notion page IDs
 const gitHubPRsIdToNotionPageId: {}[] = [] // Maps GitHub PRs numbers to Notion page IDs
 
-// Get issues already stored on Notion DB and then sync with github ones
+// Boolean for testing purposes.
+let codeIsRunning : boolean = true;
 
+// Get issues already stored on Notion DB and then sync with github ones
 try{
+
   cron.schedule('0 */6 * * *', async () => {
     setInitialGitHubToNotionIdMap().then(syncNotionDatabaseWithGitHub)
   })
 }catch(err) {
+  codeIsRunning = false;
   console.log(err)
 }
 
@@ -303,3 +307,5 @@ async function updatePages(pagesToUpdate: any) {
     console.log(`Completed batch size: ${pagesToUpdateBatch.length}`)
   }
 }
+
+export default { codeIsRunning}
