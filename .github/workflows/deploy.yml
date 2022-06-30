@@ -47,3 +47,5 @@ jobs:
         PASSWORD: ${{ secrets.PASSWORD }}
         PORT: ${{ secrets.PORT }}
         script: ls
+    
+    - run: pm2 restart Noctotion
