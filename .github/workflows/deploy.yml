@@ -48,4 +48,4 @@ jobs:
         script: |
           pwd
           ls
-          ./deploy.sh
+          ./deploy.sh noctotion
