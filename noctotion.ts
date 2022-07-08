@@ -23,9 +23,13 @@ let codeIsRunning : boolean = true;
 // Get issues already stored on Notion DB and then sync with github ones
 try{
   console.log("App Running")
-  cron.schedule('0 */6 * * *', async () => {
+  if (process.env.NODE_ENV === 'production') {
+    cron.schedule('0 */6 * * *', async () => {
+      setInitialGitHubToNotionIdMap().then(syncNotionDatabaseWithGitHub)
+    })
+  }else if (process.env.NODE_ENV === 'development') {
     setInitialGitHubToNotionIdMap().then(syncNotionDatabaseWithGitHub)
-  })
+  }
 }catch(err) {
   codeIsRunning = false;
   console.log(err)
