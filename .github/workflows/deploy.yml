@@ -47,5 +47,8 @@ jobs:
         PORT: ${{ secrets.PORT }}
         script: |
           pwd
-          ls
+          whoami
+          chown ${{ secrets.HOST }}:${{ secrets.HOST }} projets/Noctotion/
+          cd projets/Noctotion/ && chown -R ${{ secrets.HOST }}:${{ secrets.HOST }} *
+          ll
           ./deploy.sh noctotion
