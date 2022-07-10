@@ -18,19 +18,24 @@ const gitHubIssuesIdToNotionPageId: {}[] = [] // Maps GitHub issue numbers to No
 const gitHubPRsIdToNotionPageId: {}[] = [] // Maps GitHub PRs numbers to Notion page IDs
 
 // Boolean for testing purposes.
-let codeIsRunning : boolean = true;
+let codeIsRunning: boolean = true;
+
+// Wait method
+const wait = async (ms: number) => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 // Get issues already stored on Notion DB and then sync with github ones
-try{
+try {
   console.log("App Running")
   if (process.env.NODE_ENV === 'production') {
     cron.schedule('0 */6 * * *', async () => {
       setInitialGitHubToNotionIdMap().then(syncNotionDatabaseWithGitHub)
     })
-  }else if (process.env.NODE_ENV === 'development') {
+  } else if (process.env.NODE_ENV === 'development') {
     setInitialGitHubToNotionIdMap().then(syncNotionDatabaseWithGitHub)
   }
-}catch(err) {
+} catch (err) {
   codeIsRunning = false;
   console.log(err)
 }
@@ -41,14 +46,18 @@ try{
 
 async function setInitialGitHubToNotionIdMap() {
   const stockedIssues = await getIssuesFromNotionDatabase();
-    for (const { pageId, issueNumber } of stockedIssues) {
-      gitHubIssuesIdToNotionPageId[issueNumber] = pageId;
-    }
+  for (const { pageId, issueNumber } of stockedIssues) {
+    gitHubIssuesIdToNotionPageId[issueNumber] = pageId;
+  }
 
+  console.log("waiting five seconds...")
+  await wait(5000).then(async () => {
     const stockedPRs = await getPullRequestsFromNotionDatabase();
-    for(const { pageId, prNumber } of stockedPRs) {
+    for (const { pageId, prNumber } of stockedPRs) {
       gitHubPRsIdToNotionPageId[prNumber] = pageId;
     }
+  })
+
 }
 
 
@@ -112,12 +121,6 @@ async function syncNotionDatabaseWithGitHub() {
   const issues = await getGitHubIssuesAssigned()
   console.log(`Fetched ${issues.length} issues from GitHub repository.`)
 
-
-  // Get all PRs currently in the provided .
-  console.log("\nFetching PRs from Notion DB...")
-  const pullRequests = await getGitHubPRForOwningRepo();
-  console.log(`Fetched ${pullRequests.length} pull requests from Notion DB.`);
-
   // Group issues into those that need to be created or updated in the Notion database.
   const { pagesToCreateIssues, pagesToUpdateIssues } = getNotionOperations(issues, 'issues');
 
@@ -129,19 +132,30 @@ async function syncNotionDatabaseWithGitHub() {
   console.log(`\n${pagesToUpdateIssues.length} issues to update in Notion.`)
   await updatePages(pagesToUpdateIssues)
 
-  // Group PRs into those that need to be created or updated in the Notion database.
-  const { pagesToCreatePRs, pagesToUpdatePRs } = getNotionOperations(pullRequests, 'pr');
+  // PR operations
+  console.log("Waiting 5 seconds...")
+  wait(5000).then(async () => {
+    // Get all PRs currently in the provided .
+    console.log("\nFetching PRs from Notion DB...")
+    const pullRequests = await getGitHubPRForOwningRepo();
+    console.log(`Fetched ${pullRequests.length} pull requests from Notion DB.`);
 
-   // Create pages for new PRs.
-  console.log(`\n${pagesToCreatePRs.length} new PRs to add to Notion.`)
-  await createPages(pagesToCreatePRs, pullRequestDB as string);
+    // Group PRs into those that need to be created or updated in the Notion database.
+    const { pagesToCreatePRs, pagesToUpdatePRs } = getNotionOperations(pullRequests, 'pr');
 
-  // Updates pages for existing PRs.
-  console.log(`\n${pagesToUpdatePRs.length} PRs to update in Notion.`)
-  await updatePages(pagesToUpdatePRs)
+    // Create pages for new PRs.
+    console.log(`\n${pagesToCreatePRs.length} new PRs to add to Notion.`)
+    await createPages(pagesToCreatePRs, pullRequestDB as string);
 
-  // Success!
-  console.log("\n✅ Notion database is synced with GitHub.")
+    // Updates pages for existing PRs.
+    console.log(`\n${pagesToUpdatePRs.length} PRs to update in Notion.`)
+    await updatePages(pagesToUpdatePRs)
+
+    // Success!
+    console.log("\n✅ Notion database is synced with GitHub.")
+  })
+
+
 }
 
 
@@ -159,7 +173,7 @@ async function getOwningRepositories() {
 
 
 async function getGitHubIssuesAssigned() {
-  const issues: { number: number, title: string, state: string, url: string, repository: string, author: string, dates : string }[] = []
+  const issues: { number: number, title: string, state: string, url: string, repository: string, author: string, dates: string }[] = []
   const iterator = octokit.paginate.iterator(octokit.rest.issues.list, {
     state: "all",
     per_page: 100,
@@ -175,7 +189,7 @@ async function getGitHubIssuesAssigned() {
           title: issue.title,
           state: issue.state,
           repository: issue.repository?.name as string,
-          dates : datesInserted,
+          dates: datesInserted,
           author: issue.user?.login as string,
           url: issue.html_url,
         })
@@ -186,7 +200,7 @@ async function getGitHubIssuesAssigned() {
 }
 
 async function getGitHubPRForOwningRepo() {
-  const pullRequest: { number: number, title: string, state: string, url: string, repository: string, author: string, dates : string }[] = []
+  const pullRequest: { number: number, title: string, state: string, url: string, repository: string, author: string, dates: string }[] = []
 
   // List of all repositories where I am the owner or a collaborator
   const repos = await getOwningRepositories();
@@ -207,12 +221,12 @@ async function getGitHubPRForOwningRepo() {
           number: pr.number,
           title: pr.title,
           state: pr.state,
-          url: pr.url,
+          url: pr.html_url,
           repository: repo.name,
           author: pr.user?.login as string,
-          dates : datesInserted,
+          dates: datesInserted,
         });
-        
+
       }
     }
   }
@@ -226,7 +240,7 @@ function getNotionOperations(activity: any, activityString: string) {
   const pagesToCreatePRs: {}[] = []
   const pagesToUpdatePRs: {}[] = []
   for (const act of activity) {
-    if(activityString === 'issues'){
+    if (activityString === 'issues') {
       const pageId = gitHubIssuesIdToNotionPageId[act.number]
       if (pageId) {
         pagesToUpdateIssues.push({
@@ -236,7 +250,7 @@ function getNotionOperations(activity: any, activityString: string) {
       } else {
         pagesToCreateIssues.push(act)
       }
-    }else{
+    } else {
       const pageId = gitHubPRsIdToNotionPageId[act.number]
       if (pageId) {
         pagesToUpdatePRs.push({
@@ -247,10 +261,10 @@ function getNotionOperations(activity: any, activityString: string) {
         pagesToCreatePRs.push(act)
       }
     }
-    
+
   }
   return { pagesToCreateIssues, pagesToUpdateIssues, pagesToCreatePRs, pagesToUpdatePRs }
-  
+
 }
 
 async function createPages(pagesToCreate: any, dbToTarget: string) {
@@ -278,7 +292,7 @@ function getPropertiesFromIssueAndPR(activity: any) {
       number,
     },
     Repository: {
-      title: [{ type: "text", text:  repository}],
+      title: [{ type: "text", text: repository }],
       select: { name: repository },
     },
     Author: {
@@ -293,14 +307,14 @@ function getPropertiesFromIssueAndPR(activity: any) {
     Date: {
       "date": { "start": dates },
     },
-  }  
+  }
 }
 
 async function updatePages(pagesToUpdate: any) {
   const pagesToUpdateChunks: Array<any> = _.chunk(pagesToUpdate, OPERATION_BATCH_SIZE)
   for (const pagesToUpdateBatch of pagesToUpdateChunks) {
     await Promise.all(
-      pagesToUpdateBatch.map(({ pageId, ...activity } : {pageId: any}) =>
+      pagesToUpdateBatch.map(({ pageId, ...activity }: { pageId: any }) =>
         notion.pages.update({
           page_id: pageId,
           properties: getPropertiesFromIssueAndPR(activity) as any,
@@ -312,4 +326,4 @@ async function updatePages(pagesToUpdate: any) {
   }
 }
 
-export default { codeIsRunning}
+export default { codeIsRunning }
