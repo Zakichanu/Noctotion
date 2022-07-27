@@ -20,10 +20,7 @@ const gitHubPRsIdToNotionPageId: {}[] = [] // Maps GitHub PRs numbers to Notion 
 // Boolean for testing purposes.
 let codeIsRunning: boolean = true;
 
-// Wait method
-const wait = async (ms: number) => {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+
 
 // Get issues already stored on Notion DB and then sync with github ones
 try {
@@ -46,25 +43,18 @@ try {
 
 async function setInitialGitHubToNotionIdMap() {
   const stockedIssues = await getIssuesFromNotionDatabase();
-  for (const { pageId, issueNumber } of stockedIssues) {
-    gitHubIssuesIdToNotionPageId[issueNumber] = pageId;
+  for (const { pageId, url } of stockedIssues) {
+    gitHubIssuesIdToNotionPageId[url] = pageId;
   }
 
-  console.log("waiting five seconds...")
-  await wait(5000).then(async () => {
-    const stockedPRs = await getPullRequestsFromNotionDatabase();
-    for (const { pageId, prNumber } of stockedPRs) {
-      gitHubPRsIdToNotionPageId[prNumber] = pageId;
-    }
-  })
-
+  const stockedPRs = await getPullRequestsFromNotionDatabase();
+  for (const { pageId, url } of stockedPRs) {
+    gitHubPRsIdToNotionPageId[url] = pageId;
+  }
 }
-
-
 
 // Retrieve issues already in notion database.
 async function getIssuesFromNotionDatabase() {
-
   const pages = [] as any;
   let cursor: string | undefined;
   while (true) {
@@ -72,22 +62,36 @@ async function getIssuesFromNotionDatabase() {
       database_id: issuesDB as string,
       start_cursor: cursor,
     })
-    pages.push(...results)
+    pages.push(...results) 
     if (!next_cursor) {
       break;
     }
     cursor = next_cursor;
   }
   console.log(`${pages.length} issues successfully fetched.`)
-  console.log(pages.length)
-  return pages.map((page: any) => {
+
+  const pageMap = pages.map(async (page: any) => {
+    const propertyItem = await getPropertyValue(page.id, page.properties["URL"].id);
     return {
       pageId: page.id,
-      issueNumber: page.properties["ID"].number,
+      url: propertyItem!.url 
     }
+    
   })
+  return Promise.all(pageMap); 
 }
 
+// Function to get the value of property url from a pageId
+async function getPropertyValue( pageId: any, propertyId: any ) {
+  const propertyItem = await notion.pages.properties.retrieve({
+    page_id: pageId,
+    property_id: propertyId,
+  }) 
+  if (propertyItem.object === "property_item" && propertyItem.type === "url") {
+    return propertyItem
+  }
+  return null;
+}
 
 // Retrieve pull requests in notion database.
 async function getPullRequestsFromNotionDatabase() {
@@ -105,12 +109,15 @@ async function getPullRequestsFromNotionDatabase() {
     cursor = next_cursor;
   }
   console.log(`${pages.length} pull requests successfully fetched.`)
-  return pages.map((page: any) => {
+  const pageMap = pages.map(async (page: any) => {
+    const propertyItem = await getPropertyValue(page.id, page.properties["URL"].id);
     return {
       pageId: page.id,
-      prNumber: page.properties["ID"].number,
+      url: propertyItem!.url 
     }
+    
   })
+  return Promise.all(pageMap); 
 }
 
 // Retrieve issues from GitHub API and sync with the one present on Notion
@@ -132,28 +139,24 @@ async function syncNotionDatabaseWithGitHub() {
   console.log(`\n${pagesToUpdateIssues.length} issues to update in Notion.`)
   await updatePages(pagesToUpdateIssues)
 
-  // PR operations
-  console.log("Waiting 5 seconds...")
-  wait(5000).then(async () => {
-    // Get all PRs currently in the provided .
-    console.log("\nFetching PRs from Notion DB...")
-    const pullRequests = await getGitHubPRForOwningRepo();
-    console.log(`Fetched ${pullRequests.length} pull requests from Notion DB.`);
+  // Get all PRs currently in the provided .
+  console.log("\nFetching PRs from Notion DB...")
+  const pullRequests = await getGitHubPRForOwningRepo();
+  console.log(`Fetched ${pullRequests.length} pull requests from Notion DB.`);
 
-    // Group PRs into those that need to be created or updated in the Notion database.
-    const { pagesToCreatePRs, pagesToUpdatePRs } = getNotionOperations(pullRequests, 'pr');
+  // Group PRs into those that need to be created or updated in the Notion database.
+  const { pagesToCreatePRs, pagesToUpdatePRs } = getNotionOperations(pullRequests, 'pr');
 
-    // Create pages for new PRs.
-    console.log(`\n${pagesToCreatePRs.length} new PRs to add to Notion.`)
-    await createPages(pagesToCreatePRs, pullRequestDB as string);
+  // Create pages for new PRs.
+  console.log(`\n${pagesToCreatePRs.length} new PRs to add to Notion.`)
+  await createPages(pagesToCreatePRs, pullRequestDB as string);
 
-    // Updates pages for existing PRs.
-    console.log(`\n${pagesToUpdatePRs.length} PRs to update in Notion.`)
-    await updatePages(pagesToUpdatePRs)
+  // Updates pages for existing PRs.
+  console.log(`\n${pagesToUpdatePRs.length} PRs to update in Notion.`)
+  await updatePages(pagesToUpdatePRs)
 
-    // Success!
-    console.log("\n✅ Notion database is synced with GitHub.")
-  })
+  // Success!
+  console.log("\n✅ Notion database is synced with GitHub.")
 
 
 }
@@ -239,9 +242,9 @@ function getNotionOperations(activity: any, activityString: string) {
   const pagesToUpdateIssues: {}[] = []
   const pagesToCreatePRs: {}[] = []
   const pagesToUpdatePRs: {}[] = []
-  for (const act of activity) {
+  for (const act of activity) { 
     if (activityString === 'issues') {
-      const pageId = gitHubIssuesIdToNotionPageId[act.number]
+      const pageId = gitHubIssuesIdToNotionPageId[act.url]
       if (pageId) {
         pagesToUpdateIssues.push({
           ...act,
@@ -249,13 +252,13 @@ function getNotionOperations(activity: any, activityString: string) {
         })
       } else {
         pagesToCreateIssues.push(act)
-      }
+      } 
     } else {
-      const pageId = gitHubPRsIdToNotionPageId[act.number]
+      const pageId = gitHubPRsIdToNotionPageId[act.url]
       if (pageId) {
         pagesToUpdatePRs.push({
           ...act,
-          pageId,
+          pageId, 
         })
       } else {
         pagesToCreatePRs.push(act)
@@ -292,7 +295,6 @@ function getPropertiesFromIssueAndPR(activity: any) {
       number,
     },
     Repository: {
-      title: [{ type: "text", text: repository }],
       select: { name: repository },
     },
     Author: {
