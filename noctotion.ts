@@ -40,7 +40,7 @@ try {
 
 
 
-
+// Get all issues and PR from notion databases so then we can know if we have to add some pages or not
 async function setInitialGitHubToNotionIdMap() {
   const stockedIssues = await getIssuesFromNotionDatabase();
   for (const { pageId, url } of stockedIssues) {
@@ -117,6 +117,8 @@ async function getPullRequestsFromNotionDatabase() {
     }
     
   })
+
+  // Wait for list to complete
   return Promise.all(pageMap); 
 }
 
@@ -157,8 +159,6 @@ async function syncNotionDatabaseWithGitHub() {
 
   // Success!
   console.log("\n✅ Notion database is synced with GitHub.")
-
-
 }
 
 
@@ -174,7 +174,7 @@ async function getOwningRepositories() {
 
 
 
-
+// Getting issues that I am assigned to (or your github username)
 async function getGitHubIssuesAssigned() {
   const issues: { number: number, title: string, state: string, url: string, repository: string, author: string, dates: string }[] = []
   const iterator = octokit.paginate.iterator(octokit.rest.issues.list, {
@@ -202,6 +202,7 @@ async function getGitHubIssuesAssigned() {
   return issues
 }
 
+// Get all PRs that I am the owner (or your github username)
 async function getGitHubPRForOwningRepo() {
   const pullRequest: { number: number, title: string, state: string, url: string, repository: string, author: string, dates: string }[] = []
 
@@ -237,6 +238,7 @@ async function getGitHubPRForOwningRepo() {
   return pullRequest;
 }
 
+// Retreieve all operation to make in notion databases
 function getNotionOperations(activity: any, activityString: string) {
   const pagesToCreateIssues: {}[] = []
   const pagesToUpdateIssues: {}[] = []
@@ -270,6 +272,7 @@ function getNotionOperations(activity: any, activityString: string) {
 
 }
 
+// Create pages for new issues and PRs
 async function createPages(pagesToCreate: any, dbToTarget: string) {
   const pagesToCreateChunks = _.chunk(pagesToCreate, OPERATION_BATCH_SIZE)
   for (const pagesToCreateBatch of pagesToCreateChunks) {
@@ -285,6 +288,7 @@ async function createPages(pagesToCreate: any, dbToTarget: string) {
   }
 }
 
+// Properties of DB
 function getPropertiesFromIssueAndPR(activity: any) {
   const { title, repository, author, number, state, url, dates } = activity
   return {
@@ -312,6 +316,7 @@ function getPropertiesFromIssueAndPR(activity: any) {
   }
 }
 
+// Update pages for existing issues and PRs
 async function updatePages(pagesToUpdate: any) {
   const pagesToUpdateChunks: Array<any> = _.chunk(pagesToUpdate, OPERATION_BATCH_SIZE)
   for (const pagesToUpdateBatch of pagesToUpdateChunks) {
