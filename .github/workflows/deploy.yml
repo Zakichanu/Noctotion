@@ -36,7 +36,7 @@ jobs:
         PORT: ${{ secrets.PORT }}
       with:
         source: "."
-        target: "/root/projets/Noctotion"
+        target: "/home/zakichanu/projets/Noctotion"
 
     - name: 🚀 Executing remote command
       uses: appleboy/ssh-action@master
@@ -48,8 +48,8 @@ jobs:
         script: |
           pwd
           whoami
-          chown root:root projets/Noctotion/
-          cd projets/Noctotion/ && chown -R root:root *
+          chown zakichanu:zakichanu projets/Noctotion/
+          cd projets/Noctotion/ && chown -R zakichanu:zakichanu *
           ls
           cd ../../
           ./deploy.sh noctotion
